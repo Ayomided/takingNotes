@@ -1,8 +1,6 @@
-from fastapi.exceptions import HTTPException
 from sqlalchemy.sql.expression import desc
-import models, schemas
-import database
-from fastapi import FastAPI, Depends, status
+import models, schemas, database
+from fastapi import FastAPI, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 
 models.database.Base.metadata.create_all(bind=database.engine)
@@ -41,21 +39,27 @@ def addNotes(request:schemas.NotesSchema, db: Session = Depends(get_db)):
     return note
 
 @app.put("/notes/{id}")
-def updateNote(id, request:schemas.NotesSchema, db:Session = Depends(get_db)):
+def updateNote(id: int, request:schemas.NotesSchema, db:Session = Depends(get_db)):
     updated_note = db.query(models.Notes).filter(models.Notes.id==id).first()
-    if updated_note == None:
-        HTTPException(
+    if updated_note is None:
+        raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Post with id {id} does not exist"
         )
-    else:
-        db.merge(updated_note)
-        db.commit()
+    updated_note.title = request.title
+    updated_note.body = request.body
+    db.commit()
+    db.refresh(updated_note)
     return updated_note
 
 @app.delete("/notes/{id}")
 def deleteNotes(id, db:Session = Depends(get_db)):
     note = db.query(models.Notes).filter(models.Notes.id==id).first()
+    if note is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Post with id {id} does not exist"
+        )
     db.delete(note)
     db.commit()
     return note
