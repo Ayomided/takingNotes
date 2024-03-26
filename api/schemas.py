@@ -1,11 +1,11 @@
 from datetime import date
 from pydantic import BaseModel
 
-class NotesBase(BaseModel):
+class NotesSchema(BaseModel):
     id: int
-    date: date
-    title: str
-    body: str
+    d: date = None
+    title: str = None
+    body: str = None
 
-    class Config:
-        orm_mode = True
+    # class Config:
+    #     orm_mode = True
